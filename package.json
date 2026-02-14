@@ -3,6 +3,10 @@
     "displayName": "GraviGauge",
     "description": "Monitor daily API quota for Antigravity AI models",
     "version": "0.0.1",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Aldrin-Joan/GraviGauge.git"
+    },
     "engines": {
         "vscode": "^1.80.0"
     },
