@@ -2,10 +2,12 @@
     "name": "gravigauge",
     "displayName": "GraviGauge",
     "description": "Monitor daily API quota for Antigravity AI models",
+    "icon": "icon.png",
     "version": "0.0.1",
+    "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/Aldrin-Joan/GraviGauge.git"
+        "url": "https://github.com/Aldrin-Joan/GraviGauge"
     },
     "engines": {
         "vscode": "^1.80.0"
@@ -16,7 +18,7 @@
     "activationEvents": [
         "onStartupFinished"
     ],
-    "publisher": "aldrinjoan",
+    "publisher": "AldrinJoanPandianW",
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
