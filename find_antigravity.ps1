@@ -1,9 +1,46 @@
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$processName = "language_server_windows_x64.exe"
+
+function Get-ListeningPorts {
+    param ( [int]$PidToSearch )
+    $netstat = netstat -ano | Select-String -Pattern "\s+$PidToSearch$"
+    $ports = @()
+    foreach ($line in $netstat) {
+        if ($line -match 'TCP\s+\d+\.\d+\.\d+\.\d+:(\d+)\s+.*LISTENING') {
+            $ports += $matches[1]
+        }
+    }
+    return $ports
+}
+
 try {
-    $processes = Get-CimInstance Win32_Process -Filter "name='$processName'" -ErrorAction Stop
-    $results = $processes | Select-Object CommandLine
-    $results | ConvertTo-Json -Depth 1
+    # Find process
+    $process = Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like "*extension_server_port*" } | Select-Object -First 1
+
+    if (-not $process) {
+        throw "Antigravity process not found"
+    }
+
+    $cmd = $process.CommandLine
+    
+    # Extract Token
+    if ($cmd -match '--csrf_token[=\s]+([a-f0-9-]+)') {
+        $token = $matches[1]
+    } else {
+        throw "CSRF Token not found in arguments"
+    }
+
+    # Find Ports
+    $pidNum = $process.ProcessId
+    $ports = Get-ListeningPorts -PidToSearch $pidNum
+
+    $result = @{
+        pid = $pidNum
+        token = $token
+        ports = $ports
+    }
+
+    $result | ConvertTo-Json -Depth 2
 } catch {
-    Write-Error $_.Exception.Message
+    $err = @{ error = $_.Exception.Message }
+    $err | ConvertTo-Json
 }

@@ -12,29 +12,15 @@
     "activationEvents": [
         "onStartupFinished"
     ],
+    "publisher": "aldrinjoan",
     "main": "./out/extension.js",
     "contributes": {
         "commands": [
             {
-                "command": "gravigauge.refresh",
-                "title": "Refresh GraviGauge Quota"
+                "command": "antigravity-quota.refresh",
+                "title": "Refresh Antigravity Quota"
             }
-        ],
-        "configuration": {
-            "title": "GraviGauge",
-            "properties": {
-                "gravigauge.apiKey": {
-                    "type": "string",
-                    "default": "",
-                    "description": "API Key for Antigravity Server authentication."
-                },
-                "gravigauge.csrfToken": {
-                    "type": "string",
-                    "default": "",
-                    "description": "CSRF Token for Antigravity Server authentication."
-                }
-            }
-        }
+        ]
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",
