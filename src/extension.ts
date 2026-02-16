@@ -1,8 +1,10 @@
+
 import * as vscode from 'vscode';
 import axios from 'axios';
 import * as https from 'https';
 import * as cp from 'child_process';
 import * as path from 'path';
+import { SidebarProvider } from './SidebarProvider';
 
 // 1. Interfaces for Type Safety
 interface QuotaInfo {
@@ -39,6 +41,7 @@ interface ConnectionInfo {
 
 // 2. Global State
 let myStatusBarItem: vscode.StatusBarItem;
+let sidebarProvider: SidebarProvider;
 let cachedConnection: ConnectionInfo | null = null;
 
 // 3. SSL Agent to ignore self-signed cert errors on localhost
@@ -48,6 +51,12 @@ const httpsAgent = new https.Agent({
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Antigravity Quota Monitor is active!');
+
+    // Create Sidebar Provider
+    sidebarProvider = new SidebarProvider(context.extensionUri);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider(SidebarProvider.viewType, sidebarProvider)
+    );
 
     // Create Status Bar Item
     myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
@@ -68,10 +77,42 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 async function findAntigravityConnection(extensionPath: string): Promise<ConnectionInfo | null> {
-    // If we have a cached connection, try to verify if it's still good? 
-    // For now, let's just re-scan if specific calls fail, OR re-scan every time?
-    // Scanning is cheap (PS script). Let's scan every time for robustness against restarts.
+    // 1. Try Cached Connection First
+    if (cachedConnection) {
+        try {
+            const { port, token } = cachedConnection;
+            const url = `https://127.0.0.1:${port}/exa.language_server_pb.LanguageServerService/GetUserStatus`;
+            console.log(`Verifying cached connection on port ${port}...`);
 
+            // Quick Ping
+            await axios.post(url, {
+                metadata: {
+                    ideName: "antigravity",
+                    ideVersion: "1.16.5",
+                    extensionName: "antigravity",
+                    locale: "en"
+                }
+            }, {
+                httpsAgent,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Connect-Protocol-Version': '1',
+                    'X-Codeium-Csrf-Token': token,
+                    'Origin': 'vscode-file://vscode-app'
+                },
+                timeout: 1500 // Very fast timeout for cache check
+            });
+
+            console.log('Cached connection still valid.');
+            return cachedConnection;
+
+        } catch (e: any) {
+            console.warn('Cached connection failed or expired:', e.message);
+            cachedConnection = null; // Reset cache
+        }
+    }
+
+    // 2. Fresh Scan (PowerShell)
     return new Promise((resolve) => {
         const scriptPath = path.join(extensionPath, 'find_antigravity.ps1');
         const command = `powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`;
@@ -98,14 +139,7 @@ async function findAntigravityConnection(extensionPath: string): Promise<Connect
                 for (const port of ports) {
                     try {
                         const url = `https://127.0.0.1:${port}/exa.language_server_pb.LanguageServerService/GetUserStatus`;
-                        // Lightweight check (HEAD or simple POST with bad auth just to check connection?)
-                        // actually just try the real call in updateQuota, but here we want to return the valid port.
-                        // Let's do a quick ping or returning the first one that connects.
 
-                        // We can just return the candidate ports and let updateQuota try them?
-                        // Or we verify here. Let's verify here to return a solid ConnectionInfo.
-
-                        // We simply assume strictly if one works, it's THE one.
                         await axios.post(url, {
                             metadata: {
                                 ideName: "antigravity",
@@ -126,7 +160,9 @@ async function findAntigravityConnection(extensionPath: string): Promise<Connect
 
                         // If successful (or even 200 OK), we found it.
                         console.log(`Found active API on port ${port}`);
-                        resolve({ pid, token, port: parseInt(port) });
+                        const newConnection = { pid, token, port: parseInt(port) };
+                        cachedConnection = newConnection; // Update Cache
+                        resolve(newConnection);
                         return;
 
                     } catch (e: any) {
@@ -167,7 +203,6 @@ async function updateQuota(extensionPath: string) {
                 ideVersion: "1.16.5",
                 extensionName: "antigravity",
                 locale: "en"
-                // No apiKey required!
             }
         };
 
@@ -189,7 +224,10 @@ async function updateQuota(extensionPath: string) {
             return;
         }
 
-        // 5. Calculate Status
+        // 5. Update Sidebar
+        sidebarProvider.update(configs);
+
+        // 6. Calculate Status
         let lowestPercentage = 100;
         const md = new vscode.MarkdownString();
         md.appendMarkdown(`**Antigravity Status**\n\n---\n`);
@@ -212,7 +250,7 @@ async function updateQuota(extensionPath: string) {
         md.appendMarkdown(`---\n$(sync) Click to refresh`);
         md.isTrusted = true;
 
-        // 6. Update UI
+        // 7. Update UI
         // Color Red if low (< 20%)
         if (lowestPercentage <= 20) {
             myStatusBarItem.text = `$(alert) ${lowestPercentage}%`;

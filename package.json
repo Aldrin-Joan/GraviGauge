@@ -3,7 +3,7 @@
     "displayName": "GraviGauge",
     "description": "Monitor daily API quota for Antigravity AI models",
     "icon": "icon.png",
-    "version": "0.0.1",
+    "version": "2.0.1",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -21,6 +21,25 @@
     "publisher": "AldrinJoanPandianW",
     "main": "./out/extension.js",
     "contributes": {
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "gravigauge-view",
+                    "title": "GraviGauge",
+                    "icon": "icon.svg"
+                }
+            ]
+        },
+        "views": {
+            "gravigauge-view": [
+                {
+                    "type": "webview",
+                    "id": "gravigauge-sidebar",
+                    "name": "Quota Dashboard",
+                    "icon": "icon.svg"
+                }
+            ]
+        },
         "commands": [
             {
                 "command": "antigravity-quota.refresh",
