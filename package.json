@@ -3,7 +3,7 @@
     "displayName": "GraviGauge",
     "description": "Monitor daily API quota for Antigravity AI models",
     "icon": "icon.png",
-    "version": "2.0.1",
+    "version": "2.0.3",
     "license": "MIT",
     "repository": {
         "type": "git",
