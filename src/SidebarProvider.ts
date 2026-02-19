@@ -30,9 +30,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         });
     }
 
-    public update(configs: any[]) {
+    public update(configs: any[], planInfo: any) {
         if (this._view) {
-            this._view.webview.postMessage({ type: 'updateData', configs: configs });
+            this._view.webview.postMessage({
+                type: 'updateData',
+                configs: configs,
+                planInfo: planInfo
+            });
         }
     }
 

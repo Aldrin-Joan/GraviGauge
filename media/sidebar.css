@@ -2,28 +2,54 @@
 body {
     font-family: var(--vscode-font-family);
     padding: 10px;
-    background-color: var(--vscode-editor-background);
-    color: var(--vscode-editor-foreground);
+    background-color: var(--vscode-sideBar-background);
+    color: var(--vscode-foreground);
+}
+
+/* Plan Info */
+.plan-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--vscode-badge-background);
+    color: var(--vscode-badge-foreground);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.plan-label {
+    opacity: 0.9;
+}
+
+.plan-name {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .card {
     background-color: var(--vscode-list-hoverBackground);
     border-radius: 6px;
-    padding: 10px;
+    padding: 12px;
     margin-bottom: 15px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: transform 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Softer shadow */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid var(--vscode-widget-border);
 }
 
 .card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
 }
 
 .model-name {
@@ -32,19 +58,22 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 180px;
+    max-width: 170px;
+    color: var(--vscode-sideBarTitle-foreground);
 }
 
 .percentage {
     font-weight: bold;
     font-size: 14px;
+    color: var(--vscode-textPreformat-foreground);
 }
 
 .progress-container {
-    background-color: var(--vscode-input-background);
+    background-color: var(--vscode-scrollbarSlider-background);
     border-radius: 4px;
     height: 8px;
     overflow: hidden;
+    margin-bottom: 8px;
 }
 
 .progress-bar {
@@ -55,20 +84,35 @@ body {
 }
 
 /* Status Colors */
-.high-quota { background-color: var(--vscode-charts-green); } /* > 50% */
-.medium-quota { background-color: var(--vscode-charts-yellow); } /* 20-50% */
-.low-quota { background-color: var(--vscode-charts-red); } /* < 20% */
+.high-quota { background-color: #4caf50; } /* Green */
+.medium-quota { background-color: #ff9800; } /* Orange */
+.low-quota { background-color: #f44336; } /* Red */
+
+/* Reset Timer */
+.reset-timer {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    text-align: right;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+.time-val {
+    font-weight: 600;
+    color: var(--vscode-textLink-foreground);
+}
 
 .refresh-btn {
     width: 100%;
-    margin-top: 20px;
-    padding: 8px;
+    margin-top: 10px;
+    padding: 10px;
     background-color: var(--vscode-button-background);
     color: var(--vscode-button-foreground);
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 600;
+    transition: background-color 0.2s;
 }
 
 .refresh-btn:hover {
@@ -80,4 +124,5 @@ body {
     color: var(--vscode-descriptionForeground);
     font-style: italic;
     margin-top: 20px;
+    font-size: 13px;
 }

@@ -5,6 +5,8 @@ A lightweight VS Code extension that monitors your AI model quotas from the loca
 ## Features
 
 - **Side Bar Dashboard**: A rich, visual dashboard in the Activity Bar showing progress bars for all your models.
+- **Time to Reset**: Displays a live countdown timer for when your model quotas will replenish (e.g., "Resets in: 2h 30m").
+- **Plan Info**: Shows your current plan tier (e.g., "Pro", "Free") directly in the dashboard.
 - **Real-Time Usage**: Displays your lowest available quota percentage directly in the status bar.
 - **Detailed Tooltip**: Hover over the status bar item to see a complete list of all models.
 - **Auto-Refresh**: Automatically fetches new data every 60 seconds.
@@ -37,6 +39,12 @@ A lightweight VS Code extension that monitors your AI model quotas from the loca
 
 ## Release Notes
 
+### 3.0.0 (V3 Update)
+- **New Feature**: **Time to Reset** countdowns for each model.
+- **New Feature**: **Plan Info** display (e.g. Free vs Pro).
+- **Enhancement**: More robust process discovery mechanism, matching standard practices.
+- **UI Update**: Improved dashboard visuals with color-coded progress bars (Green/Orange/Red).
+
 ### 1.2.0
 - **New Feature**: Added a dedicated **Side Bar Dashboard** with visual progress bars for all models.
 - **UI Update**: Improved status bar coloring logic.
@@ -49,5 +57,3 @@ A lightweight VS Code extension that monitors your AI model quotas from the loca
 
 ### 1.0.0
 - Initial release.
-- Support for `GetUserStatus` API to show all available models.
-- Handling for undefined/zero quotas.

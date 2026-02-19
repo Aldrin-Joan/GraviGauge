@@ -9,7 +9,7 @@ import { SidebarProvider } from './SidebarProvider';
 // 1. Interfaces for Type Safety
 interface QuotaInfo {
     remainingFraction: number; // e.g., 0.8 for 80%
-    resetTime: string;
+    resetTime: string; // ISO 8601
 }
 
 interface ModelOrAlias {
@@ -23,7 +23,15 @@ interface ModelConfig {
     allowedTiers?: string[];
 }
 
+interface PlanInfo {
+    planName: string; // "Free" | "Pro" | "Teams" | "Ultra"
+    teamsTier?: string;
+}
+
 interface UserStatus {
+    planStatus?: {
+        planInfo?: PlanInfo;
+    };
     cascadeModelConfigData?: {
         clientModelConfigs: ModelConfig[];
     }
@@ -167,6 +175,7 @@ async function findAntigravityConnection(extensionPath: string): Promise<Connect
 
                     } catch (e: any) {
                         // ignore conn refused
+                        console.log(`Port ${port} failed: ${e.message}`);
                     }
                 }
 
@@ -216,21 +225,28 @@ async function updateQuota(extensionPath: string) {
             }
         });
 
-        // Parse new response structure: userStatus -> cascadeModelConfigData -> clientModelConfigs
-        const configs = response.data?.userStatus?.cascadeModelConfigData?.clientModelConfigs;
+        const userStatus = response.data?.userStatus;
+        const configs = userStatus?.cascadeModelConfigData?.clientModelConfigs;
+        const planInfo = userStatus?.planStatus?.planInfo;
 
         if (!configs || configs.length === 0) {
             myStatusBarItem.text = '$(warning) No Models';
             return;
         }
 
-        // 5. Update Sidebar
-        sidebarProvider.update(configs);
+        // 5. Update Sidebar with Plan Info
+        sidebarProvider.update(configs, planInfo);
 
         // 6. Calculate Status
         let lowestPercentage = 100;
         const md = new vscode.MarkdownString();
-        md.appendMarkdown(`**Antigravity Status**\n\n---\n`);
+        md.appendMarkdown(`**Antigravity Status**\n\n`);
+
+        if (planInfo?.planName) {
+            md.appendMarkdown(`Plan: **${planInfo.planName}**\n\n---\n`);
+        } else {
+            md.appendMarkdown(`---\n`);
+        }
 
         for (const config of configs) {
             const label = config.label;
@@ -249,6 +265,7 @@ async function updateQuota(extensionPath: string) {
 
         md.appendMarkdown(`---\n$(sync) Click to refresh`);
         md.isTrusted = true;
+        md.supportThemeIcons = true; // Enable $(icon) syntax
 
         // 7. Update UI
         // Color Red if low (< 20%)
