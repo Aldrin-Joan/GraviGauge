@@ -51,6 +51,9 @@ interface ConnectionInfo {
 let myStatusBarItem: vscode.StatusBarItem;
 let sidebarProvider: SidebarProvider;
 let cachedConnection: ConnectionInfo | null = null;
+let lastFetchTime: number = 0;
+const FETCH_COOLDOWN = 30000; // 30 seconds
+const BACKGROUND_POLL_INTERVAL = 600000; // 10 minutes
 
 // 3. SSL Agent to ignore self-signed cert errors on localhost
 const httpsAgent = new https.Agent({
@@ -75,13 +78,13 @@ export function activate(context: vscode.ExtensionContext) {
     // Register Refresh Command
     const refreshCmd = vscode.commands.registerCommand('antigravity-quota.refresh', async () => {
         myStatusBarItem.text = '$(sync~spin) Refreshing...';
-        await updateQuota(context.extensionPath);
+        await updateQuota(context.extensionPath, true); // Force update on manual click
     });
     context.subscriptions.push(refreshCmd);
 
-    // Initial Fetch & Interval (Every 60 seconds)
+    // Initial Fetch & Interval (Every 10 minutes)
     updateQuota(context.extensionPath);
-    setInterval(() => updateQuota(context.extensionPath), 60000);
+    setInterval(() => updateQuota(context.extensionPath), BACKGROUND_POLL_INTERVAL);
 }
 
 async function findAntigravityConnection(extensionPath: string): Promise<ConnectionInfo | null> {
@@ -189,7 +192,19 @@ async function findAntigravityConnection(extensionPath: string): Promise<Connect
     });
 }
 
-async function updateQuota(extensionPath: string) {
+async function updateQuota(extensionPath: string, force: boolean = false) {
+    // 0. Throttling & Visibility Check
+    const now = Date.now();
+    if (!force && (now - lastFetchTime < FETCH_COOLDOWN)) {
+        console.log('Skipping poll: Rate limited (cooldown).');
+        return;
+    }
+
+    if (!sidebarProvider.isVisible()) {
+        console.log('Skipping poll: Sidebar is not visible.');
+        return;
+    }
+
     try {
         // 1. Find Connection
         const connection = await findAntigravityConnection(extensionPath);
@@ -225,6 +240,7 @@ async function updateQuota(extensionPath: string) {
             }
         });
 
+        lastFetchTime = Date.now();
         const userStatus = response.data?.userStatus;
         const configs = userStatus?.cascadeModelConfigData?.clientModelConfigs;
         const planInfo = userStatus?.planStatus?.planInfo;

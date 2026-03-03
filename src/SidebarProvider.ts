@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 export class SidebarProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'gravigauge-sidebar';
     private _view?: vscode.WebviewView;
+    private _isVisible: boolean = false;
 
     constructor(private readonly _extensionUri: vscode.Uri) { }
 
@@ -28,6 +29,20 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
                     break;
             }
         });
+
+        // Track visibility
+        this._isVisible = webviewView.visible;
+        webviewView.onDidChangeVisibility(() => {
+            this._isVisible = webviewView.visible;
+            if (this._isVisible) {
+                // Refresh when opened (throttled by extension logic)
+                vscode.commands.executeCommand('antigravity-quota.refresh');
+            }
+        });
+    }
+
+    public isVisible(): boolean {
+        return this._isVisible;
     }
 
     public update(configs: any[], planInfo: any) {
