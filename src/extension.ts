@@ -146,11 +146,10 @@ async function findAntigravityConnection(extensionPath: string): Promise<Connect
                     return;
                 }
 
-                // Check which port is the API port
-                for (const port of ports) {
+                // Check which port is the API port concurrently
+                const probePromises = ports.map(async (port: string) => {
                     try {
                         const url = `https://127.0.0.1:${port}/exa.language_server_pb.LanguageServerService/GetUserStatus`;
-
                         await axios.post(url, {
                             metadata: {
                                 ideName: "antigravity",
@@ -166,23 +165,27 @@ async function findAntigravityConnection(extensionPath: string): Promise<Connect
                                 'X-Codeium-Csrf-Token': token,
                                 'Origin': 'vscode-file://vscode-app'
                             },
-                            timeout: 2000 // Fast fail
+                            timeout: 1000 // Fast fail for parallel probing
                         });
 
-                        // If successful (or even 200 OK), we found it.
                         console.log(`Found active API on port ${port}`);
                         const newConnection = { pid, token, port: parseInt(port) };
-                        cachedConnection = newConnection; // Update Cache
-                        resolve(newConnection);
-                        return;
-
+                        cachedConnection = newConnection;
+                        return newConnection;
                     } catch (e: any) {
-                        // ignore conn refused
-                        console.log(`Port ${port} failed: ${e.message}`);
+                        // Silently fail for individual ports during scan
+                        // This prevents SSL "WRONG_VERSION_NUMBER" noise
+                        throw new Error(`Port ${port} failed`);
                     }
-                }
+                });
 
-                resolve(null);
+                try {
+                    const successfulConnection = await Promise.any(probePromises);
+                    resolve(successfulConnection);
+                } catch (e) {
+                    console.error('No active API port found among:', ports.join(', '));
+                    resolve(null);
+                }
 
             } catch (e) {
                 console.error('Parse Error:', e);
